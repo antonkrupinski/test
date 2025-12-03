@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anton Messenger</title>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Prevent body scrolling */
+        }
+        /* Custom scrollbar style for dark theme */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+    </style>
+    <!-- Lucide Icons Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div id="app" class="flex h-screen">
+        <!-- Loading/Initialization Screen -->
+        <div id="loading-screen" class="flex flex-col items-center justify-center h-screen w-full p-4">
+            <svg id="loader-icon" class="animate-spin text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <h1 class="text-2xl font-bold mb-2">Anton Messenger</h1>
+            <p id="status-message" class="text-gray-400">Initializing...</p>
+        </div>
+
+        <!-- Main Application Layout (Hidden initially) -->
+        <div id="main-layout" class="hidden w-full h-full flex">
+            
+            <!-- Sidebar -->
+            <aside id="sidebar" class="flex-col w-64 bg-gray-900 border-r border-gray-700 flex-shrink-0 transition-transform duration-300 ease-in-out fixed md:static h-full z-20">
+                <!-- User Info Header -->
+                <div class="p-4 border-b border-gray-700">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-green-500 p-2 rounded-full mr-3 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="user-name" class="font-bold text-lg"></span>
+                            <span id="user-phone" class="text-sm text-gray-400 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-5.6-5.6A19.79 19.79 0 0 1 2 16.18v-3a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 12 11.29V7a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 22 12.18v3.74"/></svg>
+                            </span>
+                        </div>
+                    </div>
+                    <button id="add-contact-btn" class="w-full flex items-center justify-center py-2 px-3 text-sm font-medium bg-green-600 rounded-lg hover:bg-green-500 transition-colors shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-2"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add Contact
+                    </button>
+                </div>
+                
+                <!-- Contact List -->
+                <nav class="flex-grow overflow-y-auto space-y-1 p-3 text-sm custom-scrollbar">
+                    <h3 class="text-xs uppercase font-semibold text-gray-500 px-3 py-2">Contacts (<span id="contact-count">0</span>)</h3>
+                    <div id="contact-list">
+                        <!-- Contacts will be rendered here -->
+                    </div>
+                </nav>
+
+                <!-- Footer/Logout -->
+                <div class="border-t border-gray-700 p-3">
+                    <button id="sign-out-btn" class="w-full flex items-center px-3 py-2 rounded-lg text-red-400 hover:bg-gray-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> Sign Out
+                    </button>
+                    <p id="app-id-display" class="text-xs text-gray-600 mt-2 text-center"></p>
+                </div>
+            </aside>
+
+            <!-- Main Chat Content -->
+            <div id="chat-content" class="flex-grow flex flex-col w-full md:w-[calc(100%-16rem)]">
+                <!-- Chat Header -->
+                <header id="chat-header" class="flex items-center p-4 bg-gray-900 border-b border-gray-700 hidden">
+                    <button id="mobile-menu-btn" class="md:hidden text-gray-400 hover:text-white mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                    </button>
+                    <div class="flex flex-col">
+                        <h2 id="contact-name-header" class="text-xl font-bold text-white"></h2>
+                        <p id="contact-phone-header" class="text-sm text-gray-400"></p>
+                    </div>
+                </header>
+                
+                <!-- Welcome Screen -->
+                <div id="welcome-screen" class="flex flex-col items-center justify-center flex-grow bg-gray-800 p-4 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap text-green-500 mb-6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <h2 class="text-3xl font-bold mb-2 text-white">Anton Messenger</h2>
+                    <p class="text-gray-400 max-w-sm">
+                        Select a contact from the sidebar to begin messaging, or press the <strong>Add Contact</strong> button to find someone by their unique 10-digit number.
+                    </p>
+                    <p class="text-xs text-gray-500 mt-4 italic">
+                        Your temporary unique number is <span id="welcome-user-phone" class="font-mono"></span>
+                    </p>
+                </div>
+
+                <!-- Message Area -->
+                <div id="message-area" class="hidden flex-grow overflow-y-auto p-4 space-y-4 bg-gray-800 custom-scrollbar">
+                    <!-- Messages will be rendered here -->
+                </div>
+
+                <!-- Input Bar -->
+                <div id="input-footer" class="hidden p-4 bg-gray-900 border-t border-gray-700">
+                    <div class="flex items-center bg-gray-800 rounded-xl p-2 border border-gray-700">
+                        <input
+                            type="text"
+                            id="message-input"
+                            placeholder="Type a message..."
+                            class="flex-grow p-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
+                            disabled
+                        />
+                        <button
+                            id="send-message-btn"
+                            class="p-3 rounded-lg ml-2 bg-gray-700 text-gray-500 cursor-not-allowed transition-colors"
+                            disabled
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Modal -->
+            <div id="contact-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4 hidden">
+                <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-2 text-green-400"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New Contact
+                        </h2>
+                        <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
+                    <form id="add-contact-form" class="space-y-4">
+                        <input
+                            type="text"
+                            id="target-phone-input"
+                            placeholder="Target Phone Number (10 digits)"
+                            class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            required
+                            minlength="10"
+                            maxlength="10"
+                        />
+                        <input
+                            type="text"
+                            id="contact-name-input"
+                            placeholder="Optional: Contact Name (e.g., Jane Doe)"
+                            class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                        <button
+                            type="submit"
+                            id="submit-contact-btn"
+                            class="w-full p-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-500 transition-colors disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Add Contact
+                        </button>
+                    </form>
+                    <p id="modal-message" class="mt-4 text-center text-sm font-medium hidden"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs, addDoc, serverTimestamp, setLogLevel 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- IMPORTANT: VERCEL/EXTERNAL DEPLOYMENT CONFIGURATION ---
+        // If you are deploying this outside of the Canvas environment (e.g., Vercel), 
+        // the global variables will be undefined.
+        // You MUST replace the content of VERCEL_FIREBASE_CONFIG_HERE with your 
+        // actual Firebase project configuration object.
+        const VERCEL_FIREBASE_CONFIG_HERE = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // -------------------------------------------------------------------
+
+        // --- Global Variables and Configuration ---
+        // Use the Canvas provided config if available, otherwise use the Vercel config.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chat-app';
+        let firebaseConfig = {};
+        let initialAuthToken = null;
+
+        if (typeof __firebase_config !== 'undefined') {
+            try {
+                firebaseConfig = JSON.parse(__firebase_config);
+                initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            } catch (e) {
+                console.error("Failed to parse __firebase_config:", e);
+            }
+        } else {
+            // Running outside Canvas, use the manually defined VERCEL config
+            firebaseConfig = VERCEL_FIREBASE_CONFIG_HERE;
+            // No custom auth token needed for external deployment, we rely on anonymous sign-in.
+        }
+
+        let db;
+        let auth;
+        let userId = null;
+        let userPhone = null; // Stored locally
+        let userName = 'Guest'; // Stored locally
+        let contacts = [];
+        let selectedContact = null;
+        let unsubscribeMessages = null; // Listener cleanup
+
+        // --- Utility Functions ---
+
+        const updateStatus = (message, isError = false) => {
+            const statusEl = document.getElementById('status-message');
+            const loaderIcon = document.getElementById('loader-icon');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.classList.toggle('text-red-400', isError);
+                statusEl.classList.toggle('text-gray-400', !isError);
+            }
+            if (loaderIcon && isError) {
+                loaderIcon.classList.remove('animate-spin', 'text-green-500');
+                loaderIcon.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle text-red-500 mb-4"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h18.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12" y1="17" y2="17"/></svg>';
+            }
+            console.log(message);
+        };
+        
+        const generatePhoneNumber = () => {
+            return Array(10).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
+        };
+
+        const getChatId = (phone1, phone2) => {
+            const sorted = [phone1, phone2].sort();
+            return `${sorted[0]}_${sorted[1]}`;
+        };
+
+        /**
+         * Generates the Firestore collection path based on privacy and type.
+         */
+        const getCollectionPath = (collectionName, uid, isPublic = false, chatDocId = null) => {
+            if (isPublic) {
+                if (collectionName === 'messages' && chatDocId) {
+                    // Public path for chat messages
+                    return `artifacts/${appId}/public/data/chats/${chatDocId}/messages`;
+                }
+                if (collectionName === 'phoneIndex') {
+                    // Public path for phone number lookup index
+                    return `artifacts/${appId}/public/data/phoneIndex`;
+                }
+            }
+            // Private path for user's own data (contacts and profile)
+            return `artifacts/${appId}/users/${uid}/${collectionName}`;
+        };
+
+        // --- Rendering and DOM Manipulation ---
+
+        const renderUserHeader = () => {
+            document.getElementById('user-name').textContent = userName;
+            document.getElementById('user-phone').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-5.6-5.6A19.79 19.79 0 0 1 2 16.18v-3a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 12 11.29V7a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 22 12.18v3.74"/></svg> ${userPhone}`;
+            document.getElementById('app-id-display').textContent = `App ID: ${appId.substring(0, 8)}...`;
+            document.getElementById('welcome-user-phone').textContent = userPhone;
+        };
+
+        const renderContacts = () => {
+            const contactListEl = document.getElementById('contact-list');
+            contactListEl.innerHTML = '';
+            document.getElementById('contact-count').textContent = contacts.length;
+            
+            if (contacts.length === 0) {
+                contactListEl.innerHTML = '<p class="text-gray-500 text-center p-4 italic">No contacts yet.</p>';
+                return;
+            }
+
+            contacts.forEach(contact => {
+                const isSelected = selectedContact && selectedContact.id === contact.id;
+                const contactEl = document.createElement('div');
+                contactEl.id = `contact-${contact.id}`;
+                contactEl.className = `flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors ${
+                    isSelected ? 'bg-gray-700 text-white border-l-4 border-green-500' : 'hover:bg-gray-800 text-gray-300'
+                }`;
+                contactEl.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square mr-3 flex-shrink-0"><path d="m21 14.16-5.26-2.11a2 2 0 0 0-1.81-.07L7.4 20.84a2 2 0 0 0 .54 2.21 2 2 0 0 0 2.21-.54L15.93 7.8a2 2 0 0 0-.07-1.81l-2.11-5.26a2 2 0 0 0-2.31-1.35 2 2 0 0 0-1.35 2.31z"/></svg>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="font-medium truncate text-white">${contact.name}</span>
+                        <span class="text-xs text-gray-500">${contact.targetPhoneNumber}</span>
+                    </div>
+                `;
+                contactEl.onclick = () => selectContact(contact);
+                contactListEl.appendChild(contactEl);
+            });
+        };
+
+        const renderMessages = (messages) => {
+            const messageAreaEl = document.getElementById('message-area');
+            messageAreaEl.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const isUser = msg.senderPhone === userPhone;
+                const msgEl = document.createElement('div');
+                msgEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+
+                const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...';
+
+                msgEl.innerHTML = `
+                    <div class="max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-xl shadow-md ${
+                        isUser
+                            ? 'bg-green-600 text-white rounded-br-none'
+                            : 'bg-gray-700 text-white rounded-tl-none'
+                    }">
+                        <p class="text-xs font-semibold mb-1 text-gray-300">
+                            ${isUser ? 'You' : selectedContact.name}
+                        </p>
+                        <p>${msg.text}</p>
+                        <p class="text-right text-xs mt-1 text-gray-400">
+                            ${time}
+                        </p>
+                    </div>
+                `;
+                messageAreaEl.appendChild(msgEl);
+            });
+            messageAreaEl.scrollTop = messageAreaEl.scrollHeight;
+        };
+
+        const updateChatView = (contact) => {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const chatHeader = document.getElementById('chat-header');
+            const messageArea = document.getElementById('message-area');
+            const inputFooter = document.getElementById('input-footer');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-message-btn');
+
+            if (contact) {
+                welcomeScreen.classList.add('hidden');
+                chatHeader.classList.remove('hidden');
+                messageArea.classList.remove('hidden');
+                inputFooter.classList.remove('hidden');
+                
+                document.getElementById('contact-name-header').textContent = contact.name;
+                document.getElementById('contact-phone-header').textContent = contact.targetPhoneNumber;
+                
+                messageInput.disabled = false;
+                sendButton.disabled = !messageInput.value.trim();
+                messageInput.focus();
+            } else {
+                welcomeScreen.classList.remove('hidden');
+                chatHeader.classList.add('hidden');
+                messageArea.classList.add('hidden');
+                inputFooter.classList.add('hidden');
+            }
+        };
+
+        // --- Core Application Logic ---
+
+        const setupListeners = (uid, phone) => {
+            // 1. Contacts Listener (Private)
+            const contactsPath = getCollectionPath('contacts', uid, false);
+            const contactsRef = collection(db, contactsPath);
+
+            onSnapshot(contactsRef, (snapshot) => {
+                contacts = snapshot.docs.map(d => ({ 
+                    id: d.id, 
+                    ...d.data() 
+                }));
+                renderContacts();
+                updateStatus('Contacts loaded.');
+                // Re-select contact to update view if necessary
+                if (selectedContact) {
+                    const updatedContact = contacts.find(c => c.id === selectedContact.id);
+                    if (updatedContact) selectContact(updatedContact, false);
+                }
+            }, (error) => {
+                console.error("Error fetching contacts:", error);
+                updateStatus('Error loading contacts.');
+            });
+        };
+
+        const selectContact = (contact, shouldToggleSidebar = true) => {
+            if (unsubscribeMessages) {
+                unsubscribeMessages(); // Cleanup old listener
+            }
+            
+            selectedContact = contact;
+            updateChatView(contact);
+            renderContacts(); // Highlight the selected contact
+
+            if (window.innerWidth < 768 && shouldToggleSidebar) {
+                document.getElementById('sidebar').classList.add('hidden');
+            }
+
+            // 2. Messages Listener (Public)
+            const chatId = getChatId(userPhone, contact.targetPhoneNumber);
+            const messagesPath = getCollectionPath('messages', userId, true, chatId);
+            const messagesRef = collection(db, messagesPath);
+            
+            const q = query(messagesRef);
+
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const msgs = snapshot.docs
+                    .map(d => ({ 
+                        id: d.id, 
+                        ...d.data(), 
+                        // Safely convert timestamp to Date object for sorting
+                        timestamp: d.data().timestamp?.toDate() || new Date(0) 
+                    }))
+                    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+                
+                renderMessages(msgs);
+                updateStatus(`Chat with ${contact.name} loaded.`);
+            }, (error) => {
+                console.error("Error fetching messages:", error);
+                updateStatus('Error loading messages.');
+            });
+        };
+
+        const handleSendMessage = async () => {
+            const inputEl = document.getElementById('message-input');
+            const text = inputEl.value.trim();
+
+            if (!text || !selectedContact || !userPhone) return;
+
+            inputEl.value = ''; // Clear input immediately
+            document.getElementById('send-message-btn').disabled = true; // Disable button
+
+            const chatId = getChatId(userPhone, selectedContact.targetPhoneNumber);
+            const messagesPath = getCollectionPath('messages', userId, true, chatId);
+            const messagesRef = collection(db, messagesPath);
+
+            const messageData = {
+                senderId: userId,
+                senderPhone: userPhone,
+                text: text,
+                timestamp: serverTimestamp(),
+            };
+
+            try {
+                await addDoc(messagesRef, messageData);
+            } catch (error) {
+                console.error("Error sending message:", error);
+                updateStatus('Message failed to send.');
+                inputEl.value = text; // Restore input on failure
+            }
+        };
+        
+        const handleAddContact = async (targetPhone, contactName, modal) => {
+            const messageEl = document.getElementById('modal-message');
+            const submitBtn = document.getElementById('submit-contact-btn');
+            
+            submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" class="opacity-75"></path></svg> Searching...';
+            submitBtn.disabled = true;
+            messageEl.classList.add('hidden');
+
+            if (targetPhone === userPhone) {
+                messageEl.textContent = 'Cannot add your own number.';
+                messageEl.classList.remove('hidden');
+                submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Add Contact`;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            try {
+                // Query the public phoneIndex collection by Document ID (which is the phone number)
+                const phoneIndexPath = getCollectionPath('phoneIndex', userId, true);
+                const phoneIndexRef = doc(db, phoneIndexPath, targetPhone);
+                const targetSnap = await getDoc(phoneIndexRef);
+
+                if (!targetSnap.exists()) {
+                    messageEl.textContent = 'Phone number not found. (The other user must have also run the code to be discoverable).';
+                    messageEl.classList.remove('hidden');
+                } else {
+                    const targetUser = targetSnap.data();
+                    
+                    // Add contact to user's private contact collection
+                    const contactsRef = collection(db, getCollectionPath('contacts', userId, false));
+                    await addDoc(contactsRef, {
+                        targetPhoneNumber: targetPhone,
+                        targetUserId: targetUser.userId,
+                        name: contactName || targetUser.name,
+                        addedAt: serverTimestamp(),
+                    });
+
+                    messageEl.textContent = 'Contact added successfully!';
+                    messageEl.classList.remove('hidden');
+                    messageEl.classList.remove('text-red-400');
+                    messageEl.classList.add('text-green-400');
+                    
+                    setTimeout(() => modal.classList.add('hidden'), 1500);
+                }
+
+            } catch (error) {
+                console.error("Error adding contact:", error);
+                messageEl.textContent = 'Error adding contact.';
+                messageEl.classList.remove('hidden');
+                messageEl.classList.add('text-red-400');
+            } finally {
+                submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search mr-2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Add Contact`;
+                if (!messageEl.textContent.includes('successfully')) {
+                    submitBtn.disabled = false;
+                }
+            }
+        };
+
+        const initFirebase = async () => {
+            setLogLevel('debug');
+            
+            // 1. LOCAL IDENTITY SETUP (Uses localStorage)
+            const storedPhone = localStorage.getItem('anton-user-phone');
+            const storedName = localStorage.getItem('anton-user-name');
+
+            if (storedPhone) {
+                userPhone = storedPhone;
+                userName = storedName || `User-${storedPhone.substring(0, 4)}`;
+            } else {
+                userPhone = generatePhoneNumber();
+                userName = `User-Local-${userPhone.substring(6)}`;
+                localStorage.setItem('anton-user-phone', userPhone);
+                localStorage.setItem('anton-user-name', userName);
+            }
+            renderUserHeader();
+
+            // 2. CHECK CONFIG VALIDITY
+            if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('YOUR_API_KEY_HERE')) {
+                 updateStatus('FIREBASE CONFIG ERROR: Please replace the VERCEL_FIREBASE_CONFIG_HERE placeholder with your actual Firebase API keys for external deployment.', true);
+                 return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authentication Listener
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        
+                        // --- 3. PUBLIC PHONE INDEX REGISTRATION ---
+                        // Ensure the user's phone number and ID are registered in the public index for discovery
+                        const phoneIndexPath = getCollectionPath('phoneIndex', userId, true);
+                        const userPhoneDocRef = doc(db, phoneIndexPath, userPhone);
+                        await setDoc(userPhoneDocRef, { userId: userId, name: userName }, { merge: true });
+                        updateStatus('Phone index registered. Ready.');
+                        
+                        // --- 4. START APP ---
+                        setupListeners(userId, userPhone); 
+                        document.getElementById('loading-screen').classList.add('hidden');
+                        document.getElementById('main-layout').classList.remove('hidden');
+                    } else {
+                        userId = null;
+                        updateStatus('Signed out. Re-authenticating anonymously...');
+                        // Attempt to sign in anonymously
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (e) {
+                            console.error("Re-authentication failed:", e);
+                            updateStatus('Authentication failed. Check your Firebase Auth settings (Anonymous Sign-In must be enabled).', true);
+                        }
+                    }
+                });
+
+                // Initial Sign-In Attempt (uses custom token if running in Canvas, otherwise anonymous)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                updateStatus(`Initialization failed. Check console and Firebase Config. Error: ${error.message}`, true);
+            }
+        };
+        
+        // --- Event Listeners Setup ---
+
+        const setupEventListeners = () => {
+            const sidebar = document.getElementById('sidebar');
+            const modal = document.getElementById('contact-modal');
+            const messageInput = document.getElementById('message-input');
+
+            // Sign Out
+            document.getElementById('sign-out-btn').onclick = () => {
+                auth.signOut();
+                selectedContact = null;
+                contacts = [];
+                if (unsubscribeMessages) unsubscribeMessages();
+                updateChatView(null);
+                renderContacts();
+            };
+
+            // Modal Controls
+            document.getElementById('add-contact-btn').onclick = () => modal.classList.remove('hidden');
+            document.getElementById('close-modal-btn').onclick = () => modal.classList.add('hidden');
+            
+            // Add Contact Submission
+            document.getElementById('add-contact-form').onsubmit = (e) => {
+                e.preventDefault();
+                const targetPhone = document.getElementById('target-phone-input').value.replace(/[^0-9]/g, '');
+                const contactName = document.getElementById('contact-name-input').value.trim();
+                handleAddContact(targetPhone, contactName, modal);
+            };
+
+            // Send Message
+            document.getElementById('send-message-btn').onclick = handleSendMessage;
+            messageInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            };
+            
+            // Input Change for Send Button
+            messageInput.oninput = () => {
+                document.getElementById('send-message-btn').disabled = !messageInput.value.trim();
+                document.getElementById('send-message-btn').classList.toggle('bg-green-600', messageInput.value.trim());
+                document.getElementById('send-message-btn').classList.toggle('text-white', messageInput.value.trim());
+                document.getElementById('send-message-btn').classList.toggle('bg-gray-700', !messageInput.value.trim());
+                document.getElementById('send-message-btn').classList.toggle('text-gray-500', !messageInput.value.trim());
+                document.getElementById('send-message-btn').classList.toggle('cursor-not-allowed', !messageInput.value.trim());
+            };
+
+
+            // Mobile Menu Toggle
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            mobileMenuBtn.onclick = () => sidebar.classList.toggle('hidden');
+            
+            // Initial sidebar state for desktop
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('hidden');
+            }
+        };
+
+        // Initialize Application
+        window.onload = () => {
+            setupEventListeners();
+            initFirebase();
+        };
+
+    </script>
+</body>
+</html>
