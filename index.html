@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Message Log</title>
+    <title>Anton Messenger</title>
     <!-- Load Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Use Inter font -->
@@ -28,6 +28,15 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #6b7280; /* gray-500 */
         }
+        /* Ensure sidebar hides properly on mobile */
+        @media (max-width: 767px) {
+            #sidebar.hidden {
+                transform: translateX(-100%);
+            }
+            #sidebar:not(.hidden) {
+                transform: translateX(0);
+            }
+        }
     </style>
     <!-- Lucide Icons Library -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -39,17 +48,17 @@
         <div id="main-layout" class="w-full h-full flex">
             
             <!-- Sidebar -->
-            <aside id="sidebar" class="flex-col w-64 bg-gray-900 border-r border-gray-700 flex-shrink-0 transition-transform duration-300 ease-in-out fixed md:static h-full z-20">
+            <aside id="sidebar" class="flex-col w-64 bg-gray-900 border-r border-gray-700 flex-shrink-0 transition-transform duration-300 ease-in-out fixed md:static h-full z-20 hidden md:flex">
                 <!-- User Info Header -->
                 <div class="p-4 border-b border-gray-700">
                     <div class="flex items-center mb-3">
                         <div class="bg-green-500 p-2 rounded-full mr-3 text-white">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </div>
-                        <div class="flex flex-col">
-                            <span id="user-name" class="font-bold text-lg">Local User</span>
-                            <span id="user-phone" class="text-sm text-gray-400 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-5.6-5.6A19.79 19.79 0 0 1 2 16.18v-3a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 12 11.29V7a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 22 12.18v3.74"/></svg> 0000000000
+                        <div class="flex flex-col overflow-hidden">
+                            <span id="user-name" class="font-bold text-lg truncate">Loading User...</span>
+                            <span id="user-phone" class="text-sm text-gray-400 flex items-center mt-1">
+                                <span class="text-xs font-mono text-gray-500 truncate" id="user-id-display"></span>
                             </span>
                         </div>
                     </div>
@@ -60,19 +69,23 @@
                 
                 <!-- Contact List -->
                 <nav class="flex-grow overflow-y-auto space-y-1 p-3 text-sm custom-scrollbar">
-                    <h3 class="text-xs uppercase font-semibold text-gray-500 px-3 py-2">Local Contacts (<span id="contact-count">0</span>)</h3>
+                    <h3 class="text-xs uppercase font-semibold text-gray-500 px-3 py-2">
+                        Chats (<span id="contact-count">0</span>)
+                    </h3>
                     <div id="contact-list">
                         <!-- Contacts will be rendered here -->
+                        <p class="text-gray-500 text-center p-4 italic">Loading contacts...</p>
                     </div>
                 </nav>
 
-                <!-- Footer/Logout -->
+                <!-- Footer/Status -->
                 <div class="border-t border-gray-700 p-3">
-                    <p class="text-xs text-red-500 text-center font-bold">
-                        LOCAL STORAGE ONLY
-                    </p>
-                    <p class="text-xs text-gray-600 mt-1 text-center italic">
-                        Data is saved only in your browser.
+                    <p class="text-xs text-green-500 text-center font-bold flex items-center justify-center">
+                         <span class="relative flex h-3 w-3 mr-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                        CONNECTED VIA FIREBASE
                     </p>
                 </div>
             </aside>
@@ -84,21 +97,21 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-400 hover:text-white mr-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
                     </button>
-                    <div class="flex flex-col">
-                        <h2 id="contact-name-header" class="text-xl font-bold text-white"></h2>
-                        <p id="contact-phone-header" class="text-sm text-gray-400"></p>
+                    <div class="flex flex-col overflow-hidden">
+                        <h2 id="contact-name-header" class="text-xl font-bold text-white truncate"></h2>
+                        <p id="contact-user-id-header" class="text-xs text-gray-500 font-mono truncate"></p>
                     </div>
                 </header>
                 
                 <!-- Welcome Screen -->
                 <div id="welcome-screen" class="flex flex-col items-center justify-center flex-grow bg-gray-800 p-4 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive-restore text-red-500 mb-6"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M12 18v-6"/><path d="m16 16-4-4-4 4"/><path d="M21 8H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/></svg>
-                    <h2 class="text-3xl font-bold mb-2 text-white">Local Message Log</h2>
-                    <p class="text-red-400 max-w-sm font-semibold">
-                        NOTE: This version uses local storage. Messages are NOT sent to a network and are only visible in this browser.
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-code text-green-500 mb-6"><path d="M7.9 20.9A10 10 0 1 0 4 16h4"/><path d="m10 12-2 2 2 2"/><path d="m14 16 2-2-2-2"/></svg>
+                    <h2 class="text-3xl font-bold mb-2 text-white">Anton Messenger</h2>
+                    <p class="text-green-400 max-w-sm font-semibold">
+                        This app uses Firebase Firestore for live, multi-user chat.
                     </p>
                     <p class="text-gray-400 max-w-sm mt-3">
-                        Select a contact from the sidebar to view their local chat history, or press the <strong>Add Contact</strong> button to create a new log.
+                        To chat, select a contact or add a contact by providing their **User ID** (shown in their header). Messages sent here will be received by that user instantly.
                     </p>
                 </div>
 
@@ -113,7 +126,7 @@
                         <input
                             type="text"
                             id="message-input"
-                            placeholder="Type a message to save..."
+                            placeholder="Type a message..."
                             class="flex-grow p-2 bg-transparent text-white placeholder-gray-400 focus:outline-none"
                             disabled
                         />
@@ -133,7 +146,7 @@
                 <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-2 text-green-400"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add New Contact Log
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus mr-2 text-green-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg> Add Contact
                         </h2>
                         <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -142,17 +155,15 @@
                     <form id="add-contact-form" class="space-y-4">
                         <input
                             type="text"
-                            id="target-phone-input"
-                            placeholder="Target Phone Number (10 digits for simulation)"
+                            id="target-user-id-input"
+                            placeholder="Target User ID (e.g., v8xY...)"
                             class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             required
-                            minlength="10"
-                            maxlength="10"
                         />
                         <input
                             type="text"
                             id="contact-name-input"
-                            placeholder="Contact Name (e.g., Jane Doe)"
+                            placeholder="Contact Display Name (e.g., John Doe)"
                             class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             required
                         />
@@ -171,60 +182,157 @@
     </div>
     
     <script type="module">
-        // --- Local Data Storage Keys ---
-        const USER_PHONE_KEY = 'local-log-user-phone';
-        const USER_NAME_KEY = 'local-log-user-name';
-        const CONTACTS_KEY = 'local-log-contacts';
-        const MESSAGES_KEY = 'local-log-messages'; // Stores all chat logs as an object { chatId: messagesArray }
+        // --- Firebase Imports ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            onSnapshot, 
+            collection, 
+            query, 
+            orderBy, 
+            addDoc,
+            deleteDoc,
+            getDocs,
+            getDoc,
+            where
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Enable debug logging for Firebase (optional but useful)
+        // setLogLevel('Debug');
+
+        // --- Global Firebase & App Variables ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let db;
+        let auth;
+        let userId = null; // Current user's Firebase UID
+        let isAuthReady = false;
 
         // --- State Variables ---
-        let userPhone = null;
-        let userName = 'Local User';
         let contacts = [];
-        let messagesLog = {}; // Master object holding all chat histories
         let selectedContact = null;
-        
-        // --- Utility Functions ---
+        let unsubscribeMessages = null; // Stores the function to stop the message listener
 
-        const generatePhoneNumber = () => {
-            // Generate a fake 10-digit number for simulation
-            return '000' + Array(7).fill(0).map(() => Math.floor(Math.random() * 10)).join('');
+        // --- Path Utility ---
+        const getChatCollectionPath = (uid1, uid2) => {
+            // Create a consistent path regardless of user ID order
+            const sortedUids = [uid1, uid2].sort();
+            const chatId = sortedUids.join('_');
+            // Public data path: /artifacts/{appId}/public/data/messages/{chatId}/messages
+            return `artifacts/${appId}/public/data/messages/${chatId}/messages`;
         };
 
-        const getChatId = (phone1, phone2) => {
-            // Create a consistent ID regardless of phone order
-            const sorted = [phone1, phone2].sort();
-            return `${sorted[0]}_${sorted[1]}`;
+        const getUserContactsCollectionPath = (uid) => {
+            // Private data path for contacts: /artifacts/{appId}/users/{userId}/contacts
+            return `artifacts/${appId}/users/${uid}/contacts`;
+        }
+
+        // --- Core Application Logic ---
+
+        const initializeFirebase = async () => {
+            try {
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("Firebase configuration is missing or invalid.");
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Handle initial auth using custom token or anonymous sign-in
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for authentication state changes to set up the app
+                await new Promise((resolve) => {
+                    const authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            isAuthReady = true;
+                            
+                            document.getElementById('user-id-display').textContent = userId;
+                            
+                            // Use Google Account Name if available, otherwise display the "User" name
+                            const defaultName = `User (${userId.substring(0, 4)}...)`;
+                            const displayName = user.displayName || defaultName;
+                            
+                            document.getElementById('user-name').textContent = displayName;
+
+                            await fetchUserContacts();
+                        } else {
+                            userId = null;
+                            isAuthReady = true; 
+                        }
+                        authUnsubscribe(); // Stop listening after initial auth state is determined
+                        resolve();
+                    });
+                });
+
+
+            } catch (error) {
+                console.error("Firebase Initialization or Authentication Error:", error);
+                document.getElementById('user-name').textContent = 'AUTH FAILED';
+                // Show a friendly error message to the user
+                alertUserMessage('Failed to connect to messenger service. Check console for details.', 'error');
+            }
         };
-        
-        const loadLocalData = () => {
-            // Load user profile
-            userPhone = localStorage.getItem(USER_PHONE_KEY) || generatePhoneNumber();
-            userName = localStorage.getItem(USER_NAME_KEY) || `User-${userPhone.substring(6)}`;
+
+        const alertUserMessage = (message, type = 'info') => {
+            const container = document.getElementById('chat-content');
+            let alertEl = document.getElementById('app-alert');
+            if (!alertEl) {
+                alertEl = document.createElement('div');
+                alertEl.id = 'app-alert';
+                // Position alert at the top of the chat content area
+                alertEl.className = 'absolute top-16 left-1/2 -translate-x-1/2 p-3 text-center transition-all duration-300 transform z-30 w-full max-w-md';
+                container.appendChild(alertEl);
+            }
             
-            // Persist the generated/loaded profile
-            localStorage.setItem(USER_PHONE_KEY, userPhone);
-            localStorage.setItem(USER_NAME_KEY, userName);
+            const colorClass = type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+            alertEl.innerHTML = `<div class="p-3 text-white font-semibold rounded-lg shadow-xl ${colorClass}">${message}</div>`;
             
-            // Load contacts
-            const storedContacts = localStorage.getItem(CONTACTS_KEY);
-            contacts = storedContacts ? JSON.parse(storedContacts) : [];
-
-            // Load all messages
-            const storedMessagesLog = localStorage.getItem(MESSAGES_KEY);
-            messagesLog = storedMessagesLog ? JSON.parse(storedMessagesLog) : {};
+            // Remove after 5 seconds
+            setTimeout(() => {
+                alertEl.remove();
+            }, 5000);
         };
 
-        const saveLocalData = () => {
-            localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
-            localStorage.setItem(MESSAGES_KEY, JSON.stringify(messagesLog));
-        };
+        const fetchUserContacts = async () => {
+            if (!userId || !isAuthReady) return;
 
-        // --- Rendering and DOM Manipulation ---
+            const contactListEl = document.getElementById('contact-list');
+            contactListEl.innerHTML = '<p class="text-yellow-500 text-center p-4 italic">Fetching chats...</p>';
 
-        const renderUserHeader = () => {
-            document.getElementById('user-name').textContent = userName;
-            document.getElementById('user-phone').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone mr-1"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-5.6-5.6A19.79 19.79 0 0 1 2 16.18v-3a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 12 11.29V7a2 2 0 0 1 2-2h3.41A23.11 23.11 0 0 1 22 12.18v3.74"/></svg> ${userPhone}`;
+            try {
+                const path = getUserContactsCollectionPath(userId);
+                const q = query(collection(db, path));
+                
+                const querySnapshot = await getDocs(q);
+                contacts = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                renderContacts();
+
+            } catch (e) {
+                console.error("Error fetching contacts:", e);
+                alertUserMessage('Could not load contacts.', 'error');
+            }
         };
 
         const renderContacts = () => {
@@ -233,7 +341,7 @@
             document.getElementById('contact-count').textContent = contacts.length;
             
             if (contacts.length === 0) {
-                contactListEl.innerHTML = '<p class="text-gray-500 text-center p-4 italic">No local logs yet. Add one!</p>';
+                contactListEl.innerHTML = '<p class="text-gray-500 text-center p-4 italic">No chats yet. Add a contact using their User ID!</p>';
                 return;
             }
 
@@ -241,6 +349,9 @@
                 const isSelected = selectedContact && selectedContact.id === contact.id;
                 const contactEl = document.createElement('div');
                 contactEl.id = `contact-${contact.id}`;
+                
+                const targetUidDisplay = contact.targetUserId.substring(0, 4) + '...';
+
                 contactEl.className = `flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors ${
                     isSelected ? 'bg-gray-700 text-white border-l-4 border-green-500' : 'hover:bg-gray-800 text-gray-300'
                 }`;
@@ -248,7 +359,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square mr-3 flex-shrink-0"><path d="m21 14.16-5.26-2.11a2 2 0 0 0-1.81-.07L7.4 20.84a2 2 0 0 0 .54 2.21 2 2 0 0 0 2.21-.54L15.93 7.8a2 2 0 0 0-.07-1.81l-2.11-5.26a2 2 0 0 0-2.31-1.35 2 2 0 0 0-1.35 2.31z"/></svg>
                     <div class="flex flex-col overflow-hidden">
                         <span class="font-medium truncate text-white">${contact.name}</span>
-                        <span class="text-xs text-gray-500">${contact.targetPhoneNumber}</span>
+                        <span class="text-xs text-gray-500">${targetUidDisplay}</span>
                     </div>
                 `;
                 contactEl.onclick = () => selectContact(contact);
@@ -261,11 +372,12 @@
             messageAreaEl.innerHTML = '';
             
             messages.forEach(msg => {
-                const isUser = msg.senderPhone === userPhone;
+                const isUser = msg.senderId === userId;
+                const date = new Date(msg.timestamp?.toDate ? msg.timestamp.toDate() : msg.timestamp);
+                const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                 const msgEl = document.createElement('div');
                 msgEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
-
-                const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...';
 
                 msgEl.innerHTML = `
                     <div class="max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-xl shadow-md ${
@@ -284,6 +396,7 @@
                 `;
                 messageAreaEl.appendChild(msgEl);
             });
+            // Auto-scroll to the bottom of the chat
             messageAreaEl.scrollTop = messageAreaEl.scrollHeight;
         };
 
@@ -302,7 +415,7 @@
                 inputFooter.classList.remove('hidden');
                 
                 document.getElementById('contact-name-header').textContent = contact.name;
-                document.getElementById('contact-phone-header').textContent = contact.targetPhoneNumber;
+                document.getElementById('contact-user-id-header').textContent = contact.targetUserId;
                 
                 messageInput.disabled = false;
                 sendButton.disabled = !messageInput.value.trim();
@@ -314,95 +427,131 @@
                 inputFooter.classList.add('hidden');
             }
         };
+        
+        const selectContact = (contact) => {
+            if (!userId) return; // Cannot chat without a user ID
 
-        // --- Core Application Logic ---
+            // If there's an existing listener, stop it
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+                unsubscribeMessages = null;
+            }
 
-        const selectContact = (contact, shouldToggleSidebar = true) => {
             selectedContact = contact;
             updateChatView(contact);
             renderContacts(); // Highlight the selected contact
 
-            if (window.innerWidth < 768 && shouldToggleSidebar) {
+            // Hide sidebar on mobile when a chat is selected
+            if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('hidden');
             }
             
-            const chatId = getChatId(userPhone, contact.targetPhoneNumber);
-            const msgs = messagesLog[chatId] || [];
-            
-            renderMessages(msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+            // Start listening to the new chat
+            const chatPath = getChatCollectionPath(userId, contact.targetUserId);
+            const q = query(collection(db, chatPath), orderBy("timestamp"));
+
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                const messages = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderMessages(messages);
+            }, (error) => {
+                console.error("Error listening to messages:", error);
+                alertUserMessage('Failed to fetch real-time messages.', 'error');
+            });
         };
 
-        const handleSendMessage = () => {
+        const handleSendMessage = async () => {
             const inputEl = document.getElementById('message-input');
             const text = inputEl.value.trim();
 
-            if (!text || !selectedContact || !userPhone) return;
+            if (!text || !selectedContact || !userId) return;
 
             inputEl.value = ''; // Clear input immediately
-            document.getElementById('send-message-btn').disabled = true; // Disable button
+            // Manually trigger oninput to update button state
+            const event = new Event('input', { bubbles: true });
+            inputEl.dispatchEvent(event); 
 
-            const chatId = getChatId(userPhone, selectedContact.targetPhoneNumber);
+            try {
+                const chatPath = getChatCollectionPath(userId, selectedContact.targetUserId);
+                
+                // Retry logic for API call with exponential backoff (for demonstration, applied to Firestore which is similar to an API call)
+                let success = false;
+                let attempts = 0;
+                const maxAttempts = 5;
 
-            const messageData = {
-                senderPhone: userPhone,
-                text: text,
-                timestamp: new Date().toISOString(),
-            };
-            
-            // Add message to the log
-            if (!messagesLog[chatId]) {
-                messagesLog[chatId] = [];
+                while (!success && attempts < maxAttempts) {
+                    try {
+                        await addDoc(collection(db, chatPath), {
+                            senderId: userId,
+                            text: text,
+                            timestamp: new Date(),
+                        });
+                        success = true;
+                    } catch (error) {
+                        attempts++;
+                        if (attempts >= maxAttempts) throw error;
+                        const delay = Math.pow(2, attempts) * 1000;
+                        await new Promise(res => setTimeout(res, delay));
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error sending message after multiple retries:", error);
+                alertUserMessage('Failed to send message after multiple retries. Please check connection.', 'error');
+                // Optional: Re-populate input if send failed
+                // inputEl.value = text;
             }
-            messagesLog[chatId].push(messageData);
-
-            // Save to local storage
-            saveLocalData();
-            
-            // Re-render chat view
-            const msgs = messagesLog[chatId] || [];
-            renderMessages(msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
         };
-        
-        const handleAddContact = (targetPhone, contactName, modal) => {
+
+        const handleAddContact = async (targetUserId, contactName, modal) => {
             const messageEl = document.getElementById('modal-message');
             const submitBtn = document.getElementById('submit-contact-btn');
             
+            const originalButtonHtml = submitBtn.innerHTML;
             submitBtn.innerHTML = 'Saving...';
             submitBtn.disabled = true;
             messageEl.classList.add('hidden');
 
-            if (targetPhone === userPhone) {
-                messageEl.textContent = 'Cannot add your own number.';
+            if (targetUserId === userId) {
+                messageEl.textContent = 'Cannot add your own User ID.';
                 messageEl.classList.remove('hidden');
                 messageEl.classList.add('text-red-400');
-                submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save mr-2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6v8"/><path d="M8 3V1"/></svg> Save Contact`;
+                submitBtn.innerHTML = originalButtonHtml;
                 submitBtn.disabled = false;
                 return;
             }
 
-            // Check if contact already exists
-            const exists = contacts.some(c => c.targetPhoneNumber === targetPhone);
+            // Check if contact already exists locally
+            const exists = contacts.some(c => c.targetUserId === targetUserId);
             if (exists) {
-                messageEl.textContent = 'Contact with this number already exists.';
+                messageEl.textContent = 'Contact with this User ID already exists.';
                 messageEl.classList.remove('hidden');
                 messageEl.classList.add('text-red-400');
-                submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save mr-2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6v8"/><path d="M8 3V1"/></svg> Save Contact`;
+                submitBtn.innerHTML = originalButtonHtml;
                 submitBtn.disabled = false;
                 return;
             }
             
             try {
-                const newContact = {
-                    id: crypto.randomUUID(), // Unique ID for contact tracking
-                    targetPhoneNumber: targetPhone,
+                const path = getUserContactsCollectionPath(userId);
+                
+                const newContactDocRef = await addDoc(collection(db, path), {
+                    targetUserId: targetUserId,
+                    name: contactName,
+                    addedAt: new Date(),
+                });
+                
+                // Add to local state for immediate update
+                contacts.push({
+                    id: newContactDocRef.id,
+                    targetUserId: targetUserId,
                     name: contactName,
                     addedAt: new Date().toISOString(),
-                };
-                
-                contacts.push(newContact);
-                saveLocalData();
+                });
 
-                messageEl.textContent = 'Contact log created successfully!';
+                messageEl.textContent = 'Contact saved successfully!';
                 messageEl.classList.remove('hidden');
                 messageEl.classList.remove('text-red-400');
                 messageEl.classList.add('text-green-400');
@@ -411,30 +560,22 @@
 
                 setTimeout(() => {
                     modal.classList.add('hidden');
-                    document.getElementById('target-phone-input').value = '';
+                    document.getElementById('target-user-id-input').value = '';
                     document.getElementById('contact-name-input').value = '';
                     messageEl.classList.add('hidden');
                 }, 1500);
 
             } catch (error) {
                 console.error("Error saving contact:", error);
-                messageEl.textContent = 'Error saving contact.';
-                messageEl.classList.remove('hidden');
-                messageEl.classList.add('text-red-400');
+                alertUserMessage('Error saving contact to Firebase.', 'error');
             } finally {
-                submitBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save mr-2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6v8"/><path d="M8 3V1"/></svg> Save Contact`;
                 if (!messageEl.textContent.includes('successfully')) {
-                    submitBtn.disabled = false;
+                     submitBtn.innerHTML = originalButtonHtml;
+                     submitBtn.disabled = false;
                 }
             }
         };
 
-        const initApp = () => {
-            loadLocalData();
-            renderUserHeader();
-            renderContacts();
-        };
-        
         // --- Event Listeners Setup ---
 
         const setupEventListeners = () => {
@@ -443,21 +584,27 @@
             const messageInput = document.getElementById('message-input');
 
             // Modal Controls
-            document.getElementById('add-contact-btn').onclick = () => modal.classList.remove('hidden');
+            document.getElementById('add-contact-btn').onclick = () => {
+                if (!userId) {
+                    alertUserMessage('Please wait for authentication to complete.', 'info');
+                    return;
+                }
+                modal.classList.remove('hidden');
+            }
             document.getElementById('close-modal-btn').onclick = () => modal.classList.add('hidden');
             
             // Add Contact Submission
             document.getElementById('add-contact-form').onsubmit = (e) => {
                 e.preventDefault();
-                const targetPhone = document.getElementById('target-phone-input').value.replace(/[^0-9]/g, '');
+                const targetUserId = document.getElementById('target-user-id-input').value.trim();
                 const contactName = document.getElementById('contact-name-input').value.trim();
-                handleAddContact(targetPhone, contactName, modal);
+                handleAddContact(targetUserId, contactName, modal);
             };
 
             // Send Message
             document.getElementById('send-message-btn').onclick = handleSendMessage;
             messageInput.onkeydown = (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && messageInput.value.trim().length > 0) {
                     e.preventDefault();
                     handleSendMessage();
                 }
@@ -465,28 +612,41 @@
             
             // Input Change for Send Button
             messageInput.oninput = () => {
-                document.getElementById('send-message-btn').disabled = !messageInput.value.trim();
-                document.getElementById('send-message-btn').classList.toggle('bg-green-600', messageInput.value.trim());
-                document.getElementById('send-message-btn').classList.toggle('text-white', messageInput.value.trim());
-                document.getElementById('send-message-btn').classList.toggle('bg-gray-700', !messageInput.value.trim());
-                document.getElementById('send-message-btn').classList.toggle('text-gray-500', !messageInput.value.trim());
-                document.getElementById('send-message-btn').classList.toggle('cursor-not-allowed', !messageInput.value.trim());
+                const isValid = messageInput.value.trim().length > 0;
+                const sendButton = document.getElementById('send-message-btn');
+                
+                sendButton.disabled = !isValid;
+                sendButton.classList.toggle('bg-green-600', isValid);
+                sendButton.classList.toggle('text-white', isValid);
+                sendButton.classList.toggle('bg-gray-700', !isValid);
+                sendButton.classList.toggle('text-gray-500', !isValid);
+                sendButton.classList.toggle('cursor-not-allowed', !isValid);
             };
 
             // Mobile Menu Toggle
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             mobileMenuBtn.onclick = () => sidebar.classList.toggle('hidden');
             
-            // Initial sidebar state for desktop
+            // Show sidebar initially on desktop
             if (window.innerWidth >= 768) {
                 sidebar.classList.remove('hidden');
             }
+            // Add resize listener to handle desktop/mobile view
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) {
+                    sidebar.classList.remove('hidden');
+                } else if (!selectedContact) {
+                    sidebar.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('hidden');
+                }
+            });
         };
 
         // Initialize Application
         window.onload = () => {
             setupEventListeners();
-            initApp();
+            initializeFirebase();
         };
 
     </script>
