@@ -49,6 +49,39 @@
 
     <!-- MAIN APPLICATION CONTAINER -->
     <div id="app-container" class="flex h-screen w-full">
+        <!-- Configuration Overlay (Shown if Firebase Config is missing) -->
+        <div id="config-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50 p-4 hidden">
+            <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-lg border border-red-700">
+                <h2 class="text-2xl font-bold mb-4 text-red-400">🚨 Service Configuration Required</h2>
+                <p class="text-gray-300 mb-4">
+                    The messenger is running outside the Canvas environment (e.g., Vercel) and needs your Firebase Web App configuration to connect.
+                </p>
+                
+                <form id="config-form" class="space-y-4">
+                    <textarea
+                        id="firebase-config-input"
+                        placeholder="Paste your Firebase Web App Config JSON here..."
+                        class="w-full h-32 p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                        required
+                    ></textarea>
+                    <input
+                        type="text"
+                        id="app-id-input"
+                        placeholder="Enter a Unique Application ID (e.g., my-messenger-101)"
+                        class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        class="w-full p-3 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors flex items-center justify-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save mr-2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6v8"/><path d="M8 3V1"/></svg> Save & Connect
+                    </button>
+                </form>
+                <p class="text-xs text-gray-500 mt-4 text-center">Your configuration is only stored securely in your browser's local storage.</p>
+            </div>
+        </div>
+
         <!-- Main Application Layout -->
         <div id="main-layout" class="w-full h-full flex">
             
@@ -59,7 +92,6 @@
                     <div class="flex flex-col overflow-hidden">
                         <span id="user-name" class="font-bold text-lg truncate text-green-400">Loading...</span>
                         <span class="text-xs text-gray-400">Your Unique ID (Share this):</span>
-                        <!-- NOTE: The ID is a secure Firebase UID, not a 10-digit number. -->
                         <span id="user-id-display" class="text-xs font-mono text-gray-500 break-all cursor-pointer hover:text-green-300" title="Click to copy ID"></span>
                         <p id="copy-status" class="text-xs text-yellow-500 mt-1 hidden">Copied!</p>
                     </div>
@@ -211,17 +243,89 @@
             getDocs,
             serverTimestamp,
             updateDoc,
+            orderBy, // Included for the single message query
+            limit,   // Included for the single message query
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Enable debug logging for Firebase
         setLogLevel('Debug');
 
-        // --- Global Firebase & App Variables ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // --- Configuration Handling ---
+        
+        let appId;
+        let firebaseConfig;
+        
+        // 1. Check for Canvas global variables
+        const canvasAppId = typeof __app_id !== 'undefined' ? __app_id : null;
+        const canvasFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // 2. Check LocalStorage for user-saved configuration
+        const localAppId = localStorage.getItem('antonMessengerAppId');
+        const localFirebaseConfigStr = localStorage.getItem('antonMessengerFirebaseConfig');
+        let localFirebaseConfig = null;
+        if (localFirebaseConfigStr) {
+            try {
+                localFirebaseConfig = JSON.parse(localFirebaseConfigStr);
+            } catch (e) {
+                console.error("Invalid Firebase config in localStorage:", e);
+                localStorage.removeItem('antonMessengerFirebaseConfig');
+            }
+        }
+
+        if (canvasAppId && canvasFirebaseConfig) {
+            // Case 1: Running in Canvas environment
+            appId = canvasAppId;
+            firebaseConfig = canvasFirebaseConfig;
+        } else if (localAppId && localFirebaseConfig && localFirebaseConfig.apiKey) {
+            // Case 2: Running externally with configuration saved in localStorage
+            appId = localAppId;
+            firebaseConfig = localFirebaseConfig;
+        } else {
+            // Case 3: Running externally with no configuration saved - MUST prompt user
+            document.getElementById('config-overlay').classList.remove('hidden');
+            document.getElementById('config-form').onsubmit = (e) => {
+                e.preventDefault();
+                handleConfigSubmission();
+            };
+        }
+        
+        // Function to handle config submission and restart initialization
+        function handleConfigSubmission() {
+            const configInput = document.getElementById('firebase-config-input').value.trim();
+            const newAppId = document.getElementById('app-id-input').value.trim();
+
+            if (!configInput || !newAppId) {
+                alert("Please provide both the Firebase Config JSON and a Unique Application ID.");
+                return;
+            }
+
+            try {
+                const config = JSON.parse(configInput);
+                if (!config.apiKey || !config.projectId) {
+                    throw new Error("Missing essential keys (apiKey, projectId).");
+                }
+                
+                // Save to localStorage for future runs
+                localStorage.setItem('antonMessengerFirebaseConfig', configInput);
+                localStorage.setItem('antonMessengerAppId', newAppId);
+
+                // Set global variables and start initialization
+                appId = newAppId;
+                firebaseConfig = config;
+                document.getElementById('config-overlay').classList.add('hidden');
+                
+                // Re-initiate the main application process
+                initializeFirebase();
+
+            } catch (e) {
+                alert("Invalid JSON or missing required fields in Firebase Config. Error: " + e.message);
+                console.error("Configuration Error:", e);
+            }
+        }
+
+        // --- Global Firebase & App Variables ---
         let app;
         let db;
         let auth;
@@ -229,10 +333,9 @@
         let isAuthReady = false;
 
         // --- State Variables ---
-        // Contacts structure now includes firstName, lastName, and hasUnread
         let contacts = [];
         let selectedContact = null;
-        let unsubscribeMessages = null; // Stores the function to stop the message listener
+        let unsubscribeMessages = null; 
 
         // --- Path Utilities ---
         const getChatCollectionPath = (uid1, uid2) => {
@@ -250,7 +353,6 @@
         // --- Notification Sound ---
         function playNotificationSound() {
             try {
-                // Use a simple AudioContext beep for notification
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
@@ -259,7 +361,7 @@
                 gainNode.connect(audioContext.destination);
 
                 oscillator.type = 'sine'; 
-                oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note for higher pitch
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime); 
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
 
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
@@ -268,7 +370,6 @@
                 oscillator.stop(audioContext.currentTime + 0.15);
             } catch (e) {
                 console.warn("AudioContext not supported or couldn't play sound:", e);
-                // Fail silently if audio cannot be played
             }
         }
 
@@ -288,7 +389,6 @@
 
 
             } else {
-                // Not signed in (should not happen in this environment once initial sign-in runs)
                 userId = null;
                 isAuthReady = true;
                 document.getElementById('user-name').textContent = "Not Signed In";
@@ -298,10 +398,11 @@
         };
 
         const initializeFirebase = async () => {
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                // Config is missing and user needs to be prompted via the overlay
+                return;
+            }
             try {
-                if (!firebaseConfig.apiKey) {
-                    throw new Error("Firebase configuration is missing or invalid.");
-                }
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -311,8 +412,10 @@
 
                 // 2. Initial Sign-In Attempt (Custom Token or Anonymous)
                 if (initialAuthToken) {
+                    // Use custom token if available (Canvas environment)
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    // Use anonymous sign-in (External environments like Vercel)
                     await signInAnonymously(auth);
                 }
 
@@ -330,7 +433,6 @@
             if (!alertEl) {
                 alertEl = document.createElement('div');
                 alertEl.id = 'app-alert';
-                // Fixed position for better visibility on top of chat content
                 alertEl.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 p-3 text-center transition-all duration-300 z-50 w-full max-w-md mx-auto';
                 container.appendChild(alertEl);
             }
@@ -338,17 +440,14 @@
             const colorClass = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-green-600' : 'bg-indigo-600');
             alertEl.innerHTML = `<div class="p-3 text-white font-semibold rounded-xl shadow-2xl ${colorClass}">${message}</div>`;
             
-            // Remove after 5 seconds
             setTimeout(() => {
                 alertEl.remove();
             }, 5000);
         };
         
-        // Copies the User ID to the clipboard
         function copyUserId() {
             if (userId) {
                 try {
-                    // Use execCommand for better compatibility in iframe environments
                     const el = document.createElement('textarea');
                     el.value = userId;
                     document.body.appendChild(el);
@@ -358,23 +457,21 @@
 
                     const statusEl = document.getElementById('copy-status');
                     statusEl.textContent = 'Copied!';
-                    statusEl.classList.remove('hidden');
-                    statusEl.classList.remove('text-red-400');
+                    statusEl.classList.remove('hidden', 'text-red-400');
                     statusEl.classList.add('text-green-400');
                     setTimeout(() => statusEl.classList.add('hidden'), 2000);
                 } catch (err) {
                     console.error('Failed to copy text:', err);
                     const statusEl = document.getElementById('copy-status');
                     statusEl.textContent = 'Copy failed!';
-                    statusEl.classList.remove('hidden');
-                    statusEl.classList.remove('text-green-400');
+                    statusEl.classList.remove('hidden', 'text-green-400');
                     statusEl.classList.add('text-red-400');
                     setTimeout(() => statusEl.classList.add('hidden'), 2000);
                 }
             }
         }
 
-        // --- Core Application Logic ---
+        // --- Core Application Logic (Unchanged) ---
 
         const fetchUserContacts = async () => {
             if (!userId || !isAuthReady) return;
@@ -386,15 +483,12 @@
                 const path = getUserContactsCollectionPath(userId);
                 const q = query(collection(db, path));
                 
-                // Using a real-time listener for contacts to track unread status
                 onSnapshot(q, (snapshot) => {
                     contacts = snapshot.docs.map(doc => ({
                         id: doc.id,
-                        // Includes firstName, lastName, targetUserId, and lastReadMessageId
                         ...doc.data()
                     }));
                     
-                    // Attach message listeners to all contacts to update unread status
                     contacts.forEach(contact => setupUnreadListener(contact));
 
                     renderContacts();
@@ -410,10 +504,10 @@
             }
         };
 
-        // Attaches a listener to the chat to check the last message ID
         const setupUnreadListener = (contact) => {
             const chatPath = getChatCollectionPath(userId, contact.targetUserId);
-            // Query for the single most recent message
+            // Query for the single most recent message, ordered by timestamp
+            // NOTE: This query requires Firestore index: (field: timestamp, order: descending).
             const q = query(collection(db, chatPath), orderBy('timestamp', 'desc'), limit(1));
             
             onSnapshot(q, (snapshot) => {
@@ -428,16 +522,14 @@
                         const lastMessageId = lastMessage.id;
                         const lastMessageSender = lastMessage.data().senderId;
                         
-                        // Check if the last message is new, and NOT sent by the current user
                         if (lastMessageId !== currentContact.lastReadMessageId && lastMessageSender !== userId) {
                             hasUnread = true;
-                            // Play notification sound only if it's a new message and NOT the currently selected chat
                             if (selectedContact && selectedContact.id !== currentContact.id) {
+                                // Only play sound if it's a new message in a *different* chat
                                 playNotificationSound();
                             }
                         }
                     }
-                    // Update state and re-render contacts if status changed
                     if (currentContact.hasUnread !== hasUnread) {
                         currentContact.hasUnread = hasUnread;
                         renderContacts();
@@ -487,7 +579,7 @@
             const currentScrollHeight = messageAreaEl.scrollHeight;
             const isScrolledToBottom = messageAreaEl.scrollTop + messageAreaEl.clientHeight >= currentScrollHeight - 1;
 
-            messageAreaEl.innerHTML = ''; // Clear existing list
+            messageAreaEl.innerHTML = ''; 
             
             let lastMessageId = null;
 
@@ -518,12 +610,10 @@
                 messageAreaEl.appendChild(msgEl);
             });
             
-            // Auto-scroll to the bottom only if it was already near the bottom or if it's the initial load
             if (isScrolledToBottom || messages.length === 0) {
                 messageAreaEl.scrollTop = messageAreaEl.scrollHeight;
             }
 
-            // Mark the contact as read if the last message was sent by the other user
             if (lastMessageId) {
                 const lastMsgIsFromOther = messages.length > 0 && messages[messages.length - 1].senderId !== userId;
                 if (lastMsgIsFromOther || messages.length === 0) {
@@ -532,22 +622,19 @@
             }
         };
         
-        // Updates the contact document with the ID of the last message read
         const markChatAsRead = async (contactId, lastReadMessageId) => {
             if (!userId) return;
 
             const contact = contacts.find(c => c.id === contactId);
             if (!contact) return;
 
-            // Only update if the read ID has actually changed
             if (contact.lastReadMessageId !== lastReadMessageId) {
                 const contactRef = doc(db, getUserContactsCollectionPath(userId), contactId);
                 try {
                     await updateDoc(contactRef, {
-                        lastReadMessageId: lastReadMessageId // Store the ID of the last message shown
+                        lastReadMessageId: lastReadMessageId 
                     });
                     
-                    // Manually update the local state to remove the unread badge immediately
                     contact.lastReadMessageId = lastReadMessageId;
                     contact.hasUnread = false;
                     renderContacts(); 
@@ -605,7 +692,6 @@
             }
             
             const chatPath = getChatCollectionPath(userId, contact.targetUserId);
-            // We use a query to limit listeners to the current chat
             const q = query(collection(db, chatPath)); 
 
             unsubscribeMessages = onSnapshot(q, (snapshot) => {
@@ -614,7 +700,6 @@
                     ...doc.data()
                 }));
                 
-                // Local sorting by timestamp (required since we removed Firestore's orderBy from the query)
                 messages.sort((a, b) => {
                     const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
                     const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
@@ -635,14 +720,12 @@
             if (!text || !selectedContact || !userId) return;
 
             inputEl.value = ''; 
-            // Trigger input event to re-evaluate send button state
             const event = new Event('input', { bubbles: true });
             inputEl.dispatchEvent(event); 
 
             try {
                 const chatPath = getChatCollectionPath(userId, selectedContact.targetUserId);
                 
-                // Exponential backoff for API robustness
                 let success = false;
                 let attempts = 0;
                 const maxAttempts = 5;
@@ -652,10 +735,9 @@
                         const newMsgRef = await addDoc(collection(db, chatPath), {
                             senderId: userId,
                             text: text,
-                            timestamp: serverTimestamp(), // Use server timestamp
+                            timestamp: serverTimestamp(), 
                         });
                         
-                        // Immediately mark as read (since we sent it)
                         markChatAsRead(selectedContact.id, newMsgRef.id);
 
                         success = true;
@@ -704,17 +786,14 @@
             try {
                 const path = getUserContactsCollectionPath(userId);
                 
-                // Add new contact to the user's private contact list
                 await addDoc(collection(db, path), {
                     targetUserId: targetUserId,
                     firstName: firstName,
                     lastName: lastName,
-                    lastReadMessageId: null, // Track the last message ID the user has read
+                    lastReadMessageId: null, 
                     addedAt: serverTimestamp(),
                 });
                 
-                // The onSnapshot listener in fetchUserContacts will automatically update the UI
-
                 messageEl.textContent = 'Contact saved successfully!';
                 messageEl.classList.remove('hidden');
                 messageEl.classList.remove('text-red-400');
@@ -746,8 +825,6 @@
             const modal = document.getElementById('contact-modal');
             const messageInput = document.getElementById('message-input');
             
-            // --- Messenger Listeners ---
-
             // Copy User ID
             document.getElementById('user-id-display').onclick = copyUserId;
 
@@ -808,10 +885,8 @@
                 if (window.innerWidth >= 768) {
                     sidebar.classList.remove('hidden');
                 } else if (!selectedContact) {
-                    // Show sidebar if no chat is selected on mobile
                     sidebar.classList.remove('hidden'); 
                 } else {
-                    // Hide sidebar if a chat is selected on mobile
                     sidebar.classList.add('hidden');
                 }
             });
@@ -820,7 +895,10 @@
         // Initialize Application
         window.onload = () => {
             setupEventListeners();
-            initializeFirebase();
+            // Only initialize Firebase if config is already available (either from Canvas or localStorage)
+            if (appId && firebaseConfig) {
+                initializeFirebase();
+            }
         };
 
     </script>
