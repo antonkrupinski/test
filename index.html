@@ -188,12 +188,15 @@
         // You MUST replace the content of VERCEL_FIREBASE_CONFIG_HERE with your 
         // actual Firebase project configuration object.
         const VERCEL_FIREBASE_CONFIG_HERE = {
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            // !!! THIS BLOCK HAS BEEN REPLACED WITH THE USER'S ACTUAL FIREBASE CONFIG !!!
+            apiKey: "AIzaSyC6ZFOhBH5KanGpNpqZ96SGjvybnDeO3ac",
+            authDomain: "anton-871fe.firebaseapp.com",
+            projectId: "anton-871fe",
+            storageBucket: "anton-871fe.firebasestorage.app",
+            messagingSenderId: "211150176132",
+            appId: "1:211150176132:web:cfb3826f503f7c579a67d1",
+            measurementId: "G-12E3XL9TM5" // Optional, but included for completeness
+            // !!! END OF BLOCK TO REPLACE !!!
         };
         // -------------------------------------------------------------------
 
@@ -235,9 +238,21 @@
                 statusEl.classList.toggle('text-red-400', isError);
                 statusEl.classList.toggle('text-gray-400', !isError);
             }
-            if (loaderIcon && isError) {
-                loaderIcon.classList.remove('animate-spin', 'text-green-500');
-                loaderIcon.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle text-red-500 mb-4"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h18.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12" y1="17" y2="17"/></svg>';
+            if (loaderIcon) {
+                if (isError) {
+                    // Replace spinner with alert icon on error
+                    loaderIcon.classList.remove('animate-spin', 'text-green-500');
+                    if (!document.getElementById('error-icon')) {
+                        loaderIcon.outerHTML = '<svg id="error-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle text-red-500 mb-4"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h18.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12" y1="17" y2="17"/></svg>';
+                    }
+                } else if (!loaderIcon.classList.contains('animate-spin')) {
+                    // Restore spinner if error icon was shown and isError is false
+                    const container = document.getElementById('loading-screen');
+                    const currentIcon = container.querySelector('svg');
+                    if (currentIcon.id === 'error-icon') {
+                        currentIcon.outerHTML = '<svg id="loader-icon" class="animate-spin text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+                    }
+                }
             }
             console.log(message);
         };
