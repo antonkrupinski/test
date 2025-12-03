@@ -35,6 +35,10 @@
             }
             #sidebar:not(.hidden) {
                 transform: translateX(0);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+            }
+            #sidebar {
+                width: 75%; /* More space for the sidebar on small screens */
             }
         }
     </style>
@@ -43,26 +47,24 @@
 </head>
 <body class="bg-gray-900 text-white">
 
-    <div id="app" class="flex h-screen">
+    <!-- MAIN APPLICATION CONTAINER -->
+    <div id="app-container" class="flex h-screen w-full">
         <!-- Main Application Layout -->
         <div id="main-layout" class="w-full h-full flex">
             
             <!-- Sidebar -->
-            <aside id="sidebar" class="flex-col w-64 bg-gray-900 border-r border-gray-700 flex-shrink-0 transition-transform duration-300 ease-in-out fixed md:static h-full z-20 hidden md:flex">
+            <aside id="sidebar" class="flex-col w-64 bg-gray-900 border-r border-gray-700 flex-shrink-0 transition-transform duration-300 ease-in-out fixed md:static h-full z-20 flex hidden md:flex">
                 <!-- User Info Header -->
                 <div class="p-4 border-b border-gray-700">
-                    <div class="flex items-center mb-3">
-                        <div class="bg-green-500 p-2 rounded-full mr-3 text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <div class="flex flex-col overflow-hidden">
-                            <span id="user-name" class="font-bold text-lg truncate">Loading User...</span>
-                            <span id="user-phone" class="text-sm text-gray-400 flex items-center mt-1">
-                                <span class="text-xs font-mono text-gray-500 truncate" id="user-id-display"></span>
-                            </span>
-                        </div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span id="user-name" class="font-bold text-lg truncate text-green-400">Loading...</span>
+                        <span class="text-xs text-gray-400">Your Unique ID (Share this):</span>
+                        <!-- NOTE: The ID is a secure Firebase UID, not a 10-digit number. -->
+                        <span id="user-id-display" class="text-xs font-mono text-gray-500 break-all cursor-pointer hover:text-green-300" title="Click to copy ID"></span>
+                        <p id="copy-status" class="text-xs text-yellow-500 mt-1 hidden">Copied!</p>
                     </div>
-                    <button id="add-contact-btn" class="w-full flex items-center justify-center py-2 px-3 text-sm font-medium bg-green-600 rounded-lg hover:bg-green-500 transition-colors shadow-lg">
+
+                    <button id="add-contact-btn" class="w-full flex items-center justify-center py-2 px-3 mt-3 text-sm font-medium bg-indigo-600 rounded-lg hover:bg-indigo-500 transition-colors shadow-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-2"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Add Contact
                     </button>
                 </div>
@@ -85,7 +87,7 @@
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                         </span>
-                        CONNECTED VIA FIREBASE
+                        STATUS: ONLINE
                     </p>
                 </div>
             </aside>
@@ -105,13 +107,13 @@
                 
                 <!-- Welcome Screen -->
                 <div id="welcome-screen" class="flex flex-col items-center justify-center flex-grow bg-gray-800 p-4 text-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-code text-green-500 mb-6"><path d="M7.9 20.9A10 10 0 1 0 4 16h4"/><path d="m10 12-2 2 2 2"/><path d="m14 16 2-2-2-2"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-code text-indigo-500 mb-6"><path d="M7.9 20.9A10 10 0 1 0 4 16h4"/><path d="m10 12-2 2 2 2"/><path d="m14 16 2-2-2-2"/></svg>
                     <h2 class="text-3xl font-bold mb-2 text-white">Anton Messenger</h2>
-                    <p class="text-green-400 max-w-sm font-semibold">
-                        This app uses Firebase Firestore for live, multi-user chat.
+                    <p class="text-indigo-400 max-w-sm font-semibold">
+                        Ready to chat! Share your Unique ID to connect with others.
                     </p>
                     <p class="text-gray-400 max-w-sm mt-3">
-                        To chat, select a contact or add a contact by providing their **User ID** (shown in their header). Messages sent here will be received by that user instantly.
+                        To start a conversation, add a contact by asking them for their **Unique ID**.
                     </p>
                 </div>
 
@@ -146,7 +148,7 @@
                 <div class="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus mr-2 text-green-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg> Add Contact
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus mr-2 text-indigo-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg> Add Contact
                         </h2>
                         <button id="close-modal-btn" class="text-gray-400 hover:text-white transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -157,20 +159,29 @@
                             type="text"
                             id="target-user-id-input"
                             placeholder="Target User ID (e.g., v8xY...)"
-                            class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             required
                         />
-                        <input
-                            type="text"
-                            id="contact-name-input"
-                            placeholder="Contact Display Name (e.g., John Doe)"
-                            class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            required
-                        />
+                        <div class="flex space-x-2">
+                             <input
+                                type="text"
+                                id="contact-first-name-input"
+                                placeholder="First Name"
+                                class="w-1/2 p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                required
+                            />
+                            <input
+                                type="text"
+                                id="contact-last-name-input"
+                                placeholder="Last Name"
+                                class="w-1/2 p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                required
+                            />
+                        </div>
                         <button
                             type="submit"
                             id="submit-contact-btn"
-                            class="w-full p-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-500 transition-colors flex items-center justify-center"
+                            class="w-full p-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-500 transition-colors flex items-center justify-center"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save mr-2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8h-6v8"/><path d="M8 3V1"/></svg> Save Contact
                         </button>
@@ -186,32 +197,29 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged 
+            onAuthStateChanged,
+            signInWithCustomToken,
+            signInAnonymously,
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
-            setDoc, 
+            addDoc,
             onSnapshot, 
             collection, 
             query, 
-            orderBy, 
-            addDoc,
-            deleteDoc,
             getDocs,
-            getDoc,
-            where
+            serverTimestamp,
+            updateDoc,
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Enable debug logging for Firebase (optional but useful)
-        // setLogLevel('Debug');
+        // Enable debug logging for Firebase
+        setLogLevel('Debug');
 
         // --- Global Firebase & App Variables ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app;
@@ -221,13 +229,13 @@
         let isAuthReady = false;
 
         // --- State Variables ---
+        // Contacts structure now includes firstName, lastName, and hasUnread
         let contacts = [];
         let selectedContact = null;
         let unsubscribeMessages = null; // Stores the function to stop the message listener
 
-        // --- Path Utility ---
+        // --- Path Utilities ---
         const getChatCollectionPath = (uid1, uid2) => {
-            // Create a consistent path regardless of user ID order
             const sortedUids = [uid1, uid2].sort();
             const chatId = sortedUids.join('_');
             // Public data path: /artifacts/{appId}/public/data/messages/{chatId}/messages
@@ -238,8 +246,56 @@
             // Private data path for contacts: /artifacts/{appId}/users/{userId}/contacts
             return `artifacts/${appId}/users/${uid}/contacts`;
         }
+        
+        // --- Notification Sound ---
+        function playNotificationSound() {
+            try {
+                // Use a simple AudioContext beep for notification
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
 
-        // --- Core Application Logic ---
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = 'sine'; 
+                oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5 note for higher pitch
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.15);
+            } catch (e) {
+                console.warn("AudioContext not supported or couldn't play sound:", e);
+                // Fail silently if audio cannot be played
+            }
+        }
+
+
+        // --- Auth and Initialization ---
+        const handleAuthChange = async (user) => {
+            if (user) {
+                userId = user.uid;
+                isAuthReady = true;
+
+                // 2. Update UI
+                document.getElementById('user-name').textContent = "Welcome!";
+                document.getElementById('user-id-display').textContent = userId;
+                
+                await fetchUserContacts();
+                document.getElementById('sidebar').classList.remove('hidden');
+
+
+            } else {
+                // Not signed in (should not happen in this environment once initial sign-in runs)
+                userId = null;
+                isAuthReady = true;
+                document.getElementById('user-name').textContent = "Not Signed In";
+                document.getElementById('user-id-display').textContent = "---";
+                alertUserMessage('Not signed in. Please refresh to try automatic login.', 'error');
+            }
+        };
 
         const initializeFirebase = async () => {
             try {
@@ -250,89 +306,146 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Handle initial auth using custom token or anonymous sign-in
+                // 1. Listen for authentication state changes
+                onAuthStateChanged(auth, handleAuthChange);
+
+                // 2. Initial Sign-In Attempt (Custom Token or Anonymous)
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
-                } else if (!auth.currentUser) {
+                } else {
                     await signInAnonymously(auth);
                 }
 
-                // Listen for authentication state changes to set up the app
-                await new Promise((resolve) => {
-                    const authUnsubscribe = onAuthStateChanged(auth, async (user) => {
-                        if (user) {
-                            userId = user.uid;
-                            isAuthReady = true;
-                            
-                            document.getElementById('user-id-display').textContent = userId;
-                            
-                            // Use Google Account Name if available, otherwise display the "User" name
-                            const defaultName = `User (${userId.substring(0, 4)}...)`;
-                            const displayName = user.displayName || defaultName;
-                            
-                            document.getElementById('user-name').textContent = displayName;
-
-                            await fetchUserContacts();
-                        } else {
-                            userId = null;
-                            isAuthReady = true; 
-                        }
-                        authUnsubscribe(); // Stop listening after initial auth state is determined
-                        resolve();
-                    });
-                });
-
-
             } catch (error) {
-                console.error("Firebase Initialization or Authentication Error:", error);
-                document.getElementById('user-name').textContent = 'AUTH FAILED';
-                // Show a friendly error message to the user
+                console.error("Firebase Initialization Error:", error);
+                document.getElementById('user-name').textContent = 'SERVICE OFFLINE';
                 alertUserMessage('Failed to connect to messenger service. Check console for details.', 'error');
             }
         };
 
-        const alertUserMessage = (message, type = 'info') => {
-            const container = document.getElementById('chat-content');
+        // --- UI Utility ---
+        const alertUserMessage = (message, type = 'info', targetId = 'app-container') => {
+            const container = document.getElementById(targetId);
             let alertEl = document.getElementById('app-alert');
             if (!alertEl) {
                 alertEl = document.createElement('div');
                 alertEl.id = 'app-alert';
-                // Position alert at the top of the chat content area
-                alertEl.className = 'absolute top-16 left-1/2 -translate-x-1/2 p-3 text-center transition-all duration-300 transform z-30 w-full max-w-md';
+                // Fixed position for better visibility on top of chat content
+                alertEl.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 p-3 text-center transition-all duration-300 z-50 w-full max-w-md mx-auto';
                 container.appendChild(alertEl);
             }
             
-            const colorClass = type === 'error' ? 'bg-red-600' : 'bg-blue-600';
-            alertEl.innerHTML = `<div class="p-3 text-white font-semibold rounded-lg shadow-xl ${colorClass}">${message}</div>`;
+            const colorClass = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-green-600' : 'bg-indigo-600');
+            alertEl.innerHTML = `<div class="p-3 text-white font-semibold rounded-xl shadow-2xl ${colorClass}">${message}</div>`;
             
             // Remove after 5 seconds
             setTimeout(() => {
                 alertEl.remove();
             }, 5000);
         };
+        
+        // Copies the User ID to the clipboard
+        function copyUserId() {
+            if (userId) {
+                try {
+                    // Use execCommand for better compatibility in iframe environments
+                    const el = document.createElement('textarea');
+                    el.value = userId;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+
+                    const statusEl = document.getElementById('copy-status');
+                    statusEl.textContent = 'Copied!';
+                    statusEl.classList.remove('hidden');
+                    statusEl.classList.remove('text-red-400');
+                    statusEl.classList.add('text-green-400');
+                    setTimeout(() => statusEl.classList.add('hidden'), 2000);
+                } catch (err) {
+                    console.error('Failed to copy text:', err);
+                    const statusEl = document.getElementById('copy-status');
+                    statusEl.textContent = 'Copy failed!';
+                    statusEl.classList.remove('hidden');
+                    statusEl.classList.remove('text-green-400');
+                    statusEl.classList.add('text-red-400');
+                    setTimeout(() => statusEl.classList.add('hidden'), 2000);
+                }
+            }
+        }
+
+        // --- Core Application Logic ---
 
         const fetchUserContacts = async () => {
             if (!userId || !isAuthReady) return;
 
             const contactListEl = document.getElementById('contact-list');
-            contactListEl.innerHTML = '<p class="text-yellow-500 text-center p-4 italic">Fetching chats...</p>';
+            contactListEl.innerHTML = '<p class="text-indigo-500 text-center p-4 italic">Fetching chats...</p>';
 
             try {
                 const path = getUserContactsCollectionPath(userId);
                 const q = query(collection(db, path));
                 
-                const querySnapshot = await getDocs(q);
-                contacts = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                
-                renderContacts();
+                // Using a real-time listener for contacts to track unread status
+                onSnapshot(q, (snapshot) => {
+                    contacts = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        // Includes firstName, lastName, targetUserId, and lastReadMessageId
+                        ...doc.data()
+                    }));
+                    
+                    // Attach message listeners to all contacts to update unread status
+                    contacts.forEach(contact => setupUnreadListener(contact));
+
+                    renderContacts();
+                }, (error) => {
+                    console.error("Error fetching contacts:", error);
+                    alertUserMessage('Could not load contacts.', 'error');
+                });
+
 
             } catch (e) {
                 console.error("Error fetching contacts:", e);
                 alertUserMessage('Could not load contacts.', 'error');
             }
+        };
+
+        // Attaches a listener to the chat to check the last message ID
+        const setupUnreadListener = (contact) => {
+            const chatPath = getChatCollectionPath(userId, contact.targetUserId);
+            // Query for the single most recent message
+            const q = query(collection(db, chatPath), orderBy('timestamp', 'desc'), limit(1));
+            
+            onSnapshot(q, (snapshot) => {
+                const lastMessage = snapshot.docs[0];
+                const contactIndex = contacts.findIndex(c => c.id === contact.id);
+
+                if (contactIndex > -1) {
+                    const currentContact = contacts[contactIndex];
+                    let hasUnread = false;
+
+                    if (lastMessage) {
+                        const lastMessageId = lastMessage.id;
+                        const lastMessageSender = lastMessage.data().senderId;
+                        
+                        // Check if the last message is new, and NOT sent by the current user
+                        if (lastMessageId !== currentContact.lastReadMessageId && lastMessageSender !== userId) {
+                            hasUnread = true;
+                            // Play notification sound only if it's a new message and NOT the currently selected chat
+                            if (selectedContact && selectedContact.id !== currentContact.id) {
+                                playNotificationSound();
+                            }
+                        }
+                    }
+                    // Update state and re-render contacts if status changed
+                    if (currentContact.hasUnread !== hasUnread) {
+                        currentContact.hasUnread = hasUnread;
+                        renderContacts();
+                    }
+                }
+            }, (error) => {
+                console.error("Error in unread listener for contact:", contact.id, error);
+            });
         };
 
         const renderContacts = () => {
@@ -341,26 +454,28 @@
             document.getElementById('contact-count').textContent = contacts.length;
             
             if (contacts.length === 0) {
-                contactListEl.innerHTML = '<p class="text-gray-500 text-center p-4 italic">No chats yet. Add a contact using their User ID!</p>';
+                contactListEl.innerHTML = '<p class="text-gray-500 text-center p-4 italic">No chats yet. Add a contact using their Unique ID!</p>';
                 return;
             }
 
             contacts.forEach(contact => {
                 const isSelected = selectedContact && selectedContact.id === contact.id;
+                const fullName = `${contact.firstName} ${contact.lastName}`;
+                const targetUidDisplay = contact.targetUserId.substring(0, 4) + '...';
+
                 const contactEl = document.createElement('div');
                 contactEl.id = `contact-${contact.id}`;
                 
-                const targetUidDisplay = contact.targetUserId.substring(0, 4) + '...';
-
-                contactEl.className = `flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors ${
-                    isSelected ? 'bg-gray-700 text-white border-l-4 border-green-500' : 'hover:bg-gray-800 text-gray-300'
+                contactEl.className = `relative flex items-center px-3 py-3 rounded-lg cursor-pointer transition-colors ${
+                    isSelected ? 'bg-gray-700 text-white border-l-4 border-indigo-500' : 'hover:bg-gray-800 text-gray-300'
                 }`;
                 contactEl.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square mr-3 flex-shrink-0"><path d="m21 14.16-5.26-2.11a2 2 0 0 0-1.81-.07L7.4 20.84a2 2 0 0 0 .54 2.21 2 2 0 0 0 2.21-.54L15.93 7.8a2 2 0 0 0-.07-1.81l-2.11-5.26a2 2 0 0 0-2.31-1.35 2 2 0 0 0-1.35 2.31z"/></svg>
-                    <div class="flex flex-col overflow-hidden">
-                        <span class="font-medium truncate text-white">${contact.name}</span>
+                    <div class="flex flex-col overflow-hidden flex-grow">
+                        <span class="font-medium truncate text-white">${fullName}</span>
                         <span class="text-xs text-gray-500">${targetUidDisplay}</span>
                     </div>
+                    ${contact.hasUnread ? '<span class="w-2 h-2 bg-red-500 rounded-full ml-2 flex-shrink-0"></span>' : ''}
                 `;
                 contactEl.onclick = () => selectContact(contact);
                 contactListEl.appendChild(contactEl);
@@ -369,26 +484,32 @@
 
         const renderMessages = (messages) => {
             const messageAreaEl = document.getElementById('message-area');
-            messageAreaEl.innerHTML = '';
+            const currentScrollHeight = messageAreaEl.scrollHeight;
+            const isScrolledToBottom = messageAreaEl.scrollTop + messageAreaEl.clientHeight >= currentScrollHeight - 1;
+
+            messageAreaEl.innerHTML = ''; // Clear existing list
             
+            let lastMessageId = null;
+
             messages.forEach(msg => {
                 const isUser = msg.senderId === userId;
-                const date = new Date(msg.timestamp?.toDate ? msg.timestamp.toDate() : msg.timestamp);
+                const date = msg.timestamp?.toDate ? msg.timestamp.toDate() : (msg.timestamp instanceof Date ? msg.timestamp : new Date());
                 const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastMessageId = msg.id;
 
                 const msgEl = document.createElement('div');
                 msgEl.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
 
                 msgEl.innerHTML = `
-                    <div class="max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-xl shadow-md ${
+                    <div class="max-w-[80%] sm:max-w-md lg:max-w-lg p-3 rounded-xl shadow-md ${
                         isUser
-                            ? 'bg-green-600 text-white rounded-br-none'
+                            ? 'bg-indigo-600 text-white rounded-br-none'
                             : 'bg-gray-700 text-white rounded-tl-none'
                     }">
-                        <p class="text-xs font-semibold mb-1 text-gray-300">
-                            ${isUser ? 'You' : selectedContact.name}
+                        <p class="text-xs font-semibold mb-1 ${isUser ? 'text-indigo-200' : 'text-gray-300'}">
+                            ${isUser ? 'You' : `${selectedContact.firstName} ${selectedContact.lastName}`}
                         </p>
-                        <p>${msg.text}</p>
+                        <p class="whitespace-pre-wrap">${msg.text}</p>
                         <p class="text-right text-xs mt-1 text-gray-400">
                             ${time}
                         </p>
@@ -396,9 +517,47 @@
                 `;
                 messageAreaEl.appendChild(msgEl);
             });
-            // Auto-scroll to the bottom of the chat
-            messageAreaEl.scrollTop = messageAreaEl.scrollHeight;
+            
+            // Auto-scroll to the bottom only if it was already near the bottom or if it's the initial load
+            if (isScrolledToBottom || messages.length === 0) {
+                messageAreaEl.scrollTop = messageAreaEl.scrollHeight;
+            }
+
+            // Mark the contact as read if the last message was sent by the other user
+            if (lastMessageId) {
+                const lastMsgIsFromOther = messages.length > 0 && messages[messages.length - 1].senderId !== userId;
+                if (lastMsgIsFromOther || messages.length === 0) {
+                    markChatAsRead(selectedContact.id, lastMessageId);
+                }
+            }
         };
+        
+        // Updates the contact document with the ID of the last message read
+        const markChatAsRead = async (contactId, lastReadMessageId) => {
+            if (!userId) return;
+
+            const contact = contacts.find(c => c.id === contactId);
+            if (!contact) return;
+
+            // Only update if the read ID has actually changed
+            if (contact.lastReadMessageId !== lastReadMessageId) {
+                const contactRef = doc(db, getUserContactsCollectionPath(userId), contactId);
+                try {
+                    await updateDoc(contactRef, {
+                        lastReadMessageId: lastReadMessageId // Store the ID of the last message shown
+                    });
+                    
+                    // Manually update the local state to remove the unread badge immediately
+                    contact.lastReadMessageId = lastReadMessageId;
+                    contact.hasUnread = false;
+                    renderContacts(); 
+
+                } catch (error) {
+                    console.error("Error marking chat as read:", error);
+                }
+            }
+        };
+
 
         const updateChatView = (contact) => {
             const welcomeScreen = document.getElementById('welcome-screen');
@@ -414,7 +573,8 @@
                 messageArea.classList.remove('hidden');
                 inputFooter.classList.remove('hidden');
                 
-                document.getElementById('contact-name-header').textContent = contact.name;
+                const fullName = `${contact.firstName} ${contact.lastName}`;
+                document.getElementById('contact-name-header').textContent = fullName;
                 document.getElementById('contact-user-id-header').textContent = contact.targetUserId;
                 
                 messageInput.disabled = false;
@@ -429,9 +589,8 @@
         };
         
         const selectContact = (contact) => {
-            if (!userId) return; // Cannot chat without a user ID
+            if (!userId) return; 
 
-            // If there's an existing listener, stop it
             if (unsubscribeMessages) {
                 unsubscribeMessages();
                 unsubscribeMessages = null;
@@ -439,22 +598,29 @@
 
             selectedContact = contact;
             updateChatView(contact);
-            renderContacts(); // Highlight the selected contact
+            renderContacts(); 
 
-            // Hide sidebar on mobile when a chat is selected
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('hidden');
             }
             
-            // Start listening to the new chat
             const chatPath = getChatCollectionPath(userId, contact.targetUserId);
-            const q = query(collection(db, chatPath), orderBy("timestamp"));
+            // We use a query to limit listeners to the current chat
+            const q = query(collection(db, chatPath)); 
 
             unsubscribeMessages = onSnapshot(q, (snapshot) => {
-                const messages = snapshot.docs.map(doc => ({
+                let messages = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
+                
+                // Local sorting by timestamp (required since we removed Firestore's orderBy from the query)
+                messages.sort((a, b) => {
+                    const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+                    const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+                    return timeA - timeB;
+                });
+                
                 renderMessages(messages);
             }, (error) => {
                 console.error("Error listening to messages:", error);
@@ -468,26 +634,30 @@
 
             if (!text || !selectedContact || !userId) return;
 
-            inputEl.value = ''; // Clear input immediately
-            // Manually trigger oninput to update button state
+            inputEl.value = ''; 
+            // Trigger input event to re-evaluate send button state
             const event = new Event('input', { bubbles: true });
             inputEl.dispatchEvent(event); 
 
             try {
                 const chatPath = getChatCollectionPath(userId, selectedContact.targetUserId);
                 
-                // Retry logic for API call with exponential backoff (for demonstration, applied to Firestore which is similar to an API call)
+                // Exponential backoff for API robustness
                 let success = false;
                 let attempts = 0;
                 const maxAttempts = 5;
 
                 while (!success && attempts < maxAttempts) {
                     try {
-                        await addDoc(collection(db, chatPath), {
+                        const newMsgRef = await addDoc(collection(db, chatPath), {
                             senderId: userId,
                             text: text,
-                            timestamp: new Date(),
+                            timestamp: serverTimestamp(), // Use server timestamp
                         });
+                        
+                        // Immediately mark as read (since we sent it)
+                        markChatAsRead(selectedContact.id, newMsgRef.id);
+
                         success = true;
                     } catch (error) {
                         attempts++;
@@ -500,12 +670,10 @@
             } catch (error) {
                 console.error("Error sending message after multiple retries:", error);
                 alertUserMessage('Failed to send message after multiple retries. Please check connection.', 'error');
-                // Optional: Re-populate input if send failed
-                // inputEl.value = text;
             }
         };
 
-        const handleAddContact = async (targetUserId, contactName, modal) => {
+        const handleAddContact = async (targetUserId, firstName, lastName, modal) => {
             const messageEl = document.getElementById('modal-message');
             const submitBtn = document.getElementById('submit-contact-btn');
             
@@ -523,7 +691,6 @@
                 return;
             }
 
-            // Check if contact already exists locally
             const exists = contacts.some(c => c.targetUserId === targetUserId);
             if (exists) {
                 messageEl.textContent = 'Contact with this User ID already exists.';
@@ -537,31 +704,27 @@
             try {
                 const path = getUserContactsCollectionPath(userId);
                 
-                const newContactDocRef = await addDoc(collection(db, path), {
+                // Add new contact to the user's private contact list
+                await addDoc(collection(db, path), {
                     targetUserId: targetUserId,
-                    name: contactName,
-                    addedAt: new Date(),
+                    firstName: firstName,
+                    lastName: lastName,
+                    lastReadMessageId: null, // Track the last message ID the user has read
+                    addedAt: serverTimestamp(),
                 });
                 
-                // Add to local state for immediate update
-                contacts.push({
-                    id: newContactDocRef.id,
-                    targetUserId: targetUserId,
-                    name: contactName,
-                    addedAt: new Date().toISOString(),
-                });
+                // The onSnapshot listener in fetchUserContacts will automatically update the UI
 
                 messageEl.textContent = 'Contact saved successfully!';
                 messageEl.classList.remove('hidden');
                 messageEl.classList.remove('text-red-400');
                 messageEl.classList.add('text-green-400');
                 
-                renderContacts();
-
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     document.getElementById('target-user-id-input').value = '';
-                    document.getElementById('contact-name-input').value = '';
+                    document.getElementById('contact-first-name-input').value = '';
+                    document.getElementById('contact-last-name-input').value = '';
                     messageEl.classList.add('hidden');
                 }, 1500);
 
@@ -582,11 +745,16 @@
             const sidebar = document.getElementById('sidebar');
             const modal = document.getElementById('contact-modal');
             const messageInput = document.getElementById('message-input');
+            
+            // --- Messenger Listeners ---
+
+            // Copy User ID
+            document.getElementById('user-id-display').onclick = copyUserId;
 
             // Modal Controls
             document.getElementById('add-contact-btn').onclick = () => {
                 if (!userId) {
-                    alertUserMessage('Please wait for authentication to complete.', 'info');
+                    alertUserMessage('Please wait for automatic login to complete.', 'info');
                     return;
                 }
                 modal.classList.remove('hidden');
@@ -597,8 +765,9 @@
             document.getElementById('add-contact-form').onsubmit = (e) => {
                 e.preventDefault();
                 const targetUserId = document.getElementById('target-user-id-input').value.trim();
-                const contactName = document.getElementById('contact-name-input').value.trim();
-                handleAddContact(targetUserId, contactName, modal);
+                const firstName = document.getElementById('contact-first-name-input').value.trim();
+                const lastName = document.getElementById('contact-last-name-input').value.trim();
+                handleAddContact(targetUserId, firstName, lastName, modal);
             };
 
             // Send Message
@@ -616,7 +785,7 @@
                 const sendButton = document.getElementById('send-message-btn');
                 
                 sendButton.disabled = !isValid;
-                sendButton.classList.toggle('bg-green-600', isValid);
+                sendButton.classList.toggle('bg-indigo-600', isValid);
                 sendButton.classList.toggle('text-white', isValid);
                 sendButton.classList.toggle('bg-gray-700', !isValid);
                 sendButton.classList.toggle('text-gray-500', !isValid);
@@ -627,17 +796,22 @@
             const mobileMenuBtn = document.getElementById('mobile-menu-btn');
             mobileMenuBtn.onclick = () => sidebar.classList.toggle('hidden');
             
-            // Show sidebar initially on desktop
-            if (window.innerWidth >= 768) {
-                sidebar.classList.remove('hidden');
-            }
+            // Close sidebar when clicking outside on mobile
+            document.getElementById('chat-content').onclick = () => {
+                if (window.innerWidth < 768 && !sidebar.classList.contains('hidden')) {
+                    sidebar.classList.add('hidden');
+                }
+            };
+
             // Add resize listener to handle desktop/mobile view
             window.addEventListener('resize', () => {
                 if (window.innerWidth >= 768) {
                     sidebar.classList.remove('hidden');
                 } else if (!selectedContact) {
-                    sidebar.classList.remove('hidden');
+                    // Show sidebar if no chat is selected on mobile
+                    sidebar.classList.remove('hidden'); 
                 } else {
+                    // Hide sidebar if a chat is selected on mobile
                     sidebar.classList.add('hidden');
                 }
             });
